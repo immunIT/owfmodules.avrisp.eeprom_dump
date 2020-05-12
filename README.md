@@ -1,4 +1,4 @@
-# owfmodules.skeleton
-Module base repository
+# owfmodules.avrisp.eeprom_dump
 
-Please read [CONTRIBUTING.md](https://bitbucket.org/octowire/octowire-framework/src/master/CONTRIBUTING.md) to follow the contribution process.
+Module allows dumping the eeprom memory of an AVR MCU through the ISP protocol.
+It use the SPI interface with a GPIO as reset line.
