@@ -25,18 +25,18 @@ class EepromDump(AModule):
         self.meta.update({
             'name': 'AVR dump eeprom memory',
             'version': '1.0.0',
-            'description': 'Module to dump the eeprom memory of an AVR device using the ISP protocol.',
+            'description': 'Read the EEPROM memory of AVR microcontrollers',
             'author': 'Jordan Ovrè / Ghecko <jovre@immunit.ch>, Paul Duncan / Eresse <pduncan@immunit.ch>'
         })
         self.options = {
             "spi_bus": {"Value": "", "Required": True, "Type": "int",
-                        "Description": "The octowire SPI bus (0=SPI0 or 1=SPI1)", "Default": 0},
+                        "Description": "SPI bus (0=SPI0 or 1=SPI1)", "Default": 0},
             "reset_line": {"Value": "", "Required": True, "Type": "int",
-                           "Description": "The octowire GPIO used as the Reset line", "Default": 0},
+                           "Description": "GPIO used as the Reset line", "Default": 0},
             "spi_baudrate": {"Value": "", "Required": True, "Type": "int",
-                             "Description": "set SPI baudrate (1000000 = 1MHz) maximum = 50MHz", "Default": 1000000},
+                             "Description": "SPI frequency (1000000 = 1MHz) maximum = 50MHz", "Default": 1000000},
             "dumpfile": {"Value": "", "Required": True, "Type": "file_w",
-                         "Description": "The dump filename", "Default": ""},
+                         "Description": "Dump output filename", "Default": ""},
             "intelhex": {"Value": "", "Required": True, "Type": "bool",
                          "Description": "If True, dump the firmware in intelhex format;\n"
                                         "If False, save the dump in 'raw binary' format.",
@@ -44,11 +44,12 @@ class EepromDump(AModule):
         }
         self.advanced_options.update({
             "detect_target": {"Value": "", "Required": True, "Type": "bool",
-                              "Description": "Detect the target chip and set the size option", "Default": True}
+                              "Description": "Detect the target chip and automatically set the size option",
+                              "Default": True}
         })
         self.advanced_options.update({
             "eeprom_size": {"Value": "", "Required": False, "Type": "hex",
-                            "Description": "Eeprom size (Bytes)", "Default": "0x00"}
+                            "Description": "EEPROM size (bytes)", "Default": "0x00"}
         })
         self.dependencies.append("owfmodules.avrisp.device_id>=1.0.0")
 
@@ -66,16 +67,17 @@ class EepromDump(AModule):
         eeprom_read = b'\xA0'
         enable_mem_access_cmd = b'\xac\x53\x00\x00'
         dump = BytesIO()
+        self.logger.handle("Enabling Memory Access...", self.logger.INFO)
 
-        self.logger.handle("Enable Memory Access...", self.logger.INFO)
         # Drive reset low
         reset.status = 0
+
         # Enable Memory Access
         spi_interface.transmit(enable_mem_access_cmd)
         time.sleep(0.5)
 
         # Read eeprom loop
-        for read_addr in tqdm(range(0, eeprom_size), desc="Read", unit='B', unit_scale=True,
+        for read_addr in tqdm(range(0, eeprom_size), desc="Reading", unit='B', unit_scale=True,
                               unit_divisor=1024, ascii=" #",
                               bar_format="{desc} : {percentage:3.0f}%[{bar}] {n_fmt}/{total_fmt} Bytes "
                                          "[elapsed: {elapsed} left: {remaining}]"):
@@ -85,7 +87,7 @@ class EepromDump(AModule):
 
         # Drive reset high
         reset.status = 1
-        self.logger.handle("Successfully dump {} bytes from flash memory.".format(eeprom_size), self.logger.SUCCESS)
+        self.logger.handle("Successfully dumped {} bytes from EEPROM memory.".format(eeprom_size), self.logger.SUCCESS)
 
         # Save the dump locally
         # Intel Hex file format
@@ -119,7 +121,7 @@ class EepromDump(AModule):
 
         reset.direction = GPIO.OUTPUT
 
-        # Active Reset is low
+        # Reset is active-low
         reset.status = 1
 
         # Configure SPI with default phase and polarity
@@ -127,19 +129,19 @@ class EepromDump(AModule):
 
         # Check if detect is true and eeprom size > 0 or detect is false and flash size > 0
         if self.advanced_options["eeprom_size"]["Value"] > 0:
-            self.logger.handle("Start dumping the eeprom memory of the device...", self.logger.INFO)
+            self.logger.handle("Starting dump of the EEPROM memory...", self.logger.INFO)
             self.dump(spi_interface, reset, self.advanced_options["eeprom_size"]["Value"])
         else:
-            self.logger.handle("Invalid eeprom size", self.logger.ERROR)
+            self.logger.handle("Invalid EEPROM size", self.logger.ERROR)
 
     def run(self):
         """
         Main function.
-        Dump the eeprom memory of an AVR device.
+        Dump the EEPROM memory of an AVR device.
         :return: Nothing.
         """
-        # If detect_octowire is True then Detect and connect to the Octowire hardware. Else, connect to the Octowire
-        # using the parameters that were configured. It sets the self.owf_serial variable if the hardware is found.
+        # If detect_octowire is True then detect and connect to the Octowire hardware. Else, connect to the Octowire
+        # using the parameters that were configured. This sets the self.owf_serial variable if the hardware is found.
         self.connect()
         if not self.owf_serial:
             return
