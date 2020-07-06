@@ -23,7 +23,7 @@ class EepromDump(AModule):
     def __init__(self, owf_config):
         super(EepromDump, self).__init__(owf_config)
         self.meta.update({
-            'name': 'AVR dump eeprom memory',
+            'name': 'AVR EEPROM memory dump',
             'version': '1.0.0',
             'description': 'Read the EEPROM memory of AVR microcontrollers',
             'author': 'Jordan Ovrè / Ghecko <jovre@immunit.ch>, Paul Duncan / Eresse <pduncan@immunit.ch>'
